@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>AI Shop Detector</title>
+    <style>
+        body {
+            font-family: 'Segue UI', sans-serif;
+            background-color: #eef2f3;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 50px;
+        }
+
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+        }
+
+        #uploadForm {
+            background-color: white;
+            padding: 25px 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            width: 400px;
+            margin-top: 30px;
+        }
+
+        #uploadForm input[type="file"] {
+            margin: 10px 0;
+            font-size: 14px;
+        }
+
+        #submitBtn, .clear-btn {
+            margin-top: 10px;
+            padding: 10px 16px;
+            font-size: 16px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            color: white;
+            transition: background-color 0.3s ease;
+        }
+
+        #submitBtn {
+            background-color: #3498db;
+        }
+
+        #submitBtn:hover {
+            background-color: #2980b9;
+        }
+
+        .clear-btn {
+            background-color: #e74c3c;
+            margin-left: 10px;
+        }
+
+        .clear-btn:hover {
+            background-color: #c0392b;
+        }
+
+        #progressBar {
+            margin-top: 15px;
+            display: none;
+        }
+
+        #bar {
+            width: 0%;
+            height: 100%;
+            background-color: #3498db;
+            border-radius: 10px;
+            transition: width 0.2s ease;
+        }
+
+        #spinner img {
+            margin-top: 15px;
+        }
+
+        #spinner {
+            display: none;
+        }
+
+        @media screen and (max-width: 500px) {
+            #uploadForm {
+                width: 90%;
+                padding: 20px;
+            }
+
+            #submitBtn,
+            .clear-btn {
+                width: 100%;
+                margin: 8px 0 0 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>📊 AI Shop Detector (Excel Upload)</h1>
+
+    <div id="uploadForm">
+        <input type="file" id="fileInput" accept=".xlsx" required><br>
+        <button id="submitBtn">Upload and Download</button>
+        <button type="button" class="clear-btn" onclick="window.location.href='/'">Clear</button>
+
+        <div id="progressBar">
+            <label>Processing...</label>
+            <div style="width: 100%; background-color: #ddd; height: 20px; border-radius: 10px; overflow: hidden;">
+                <div id="bar"></div>
+            </div>
+        </div>
+
+        <div id="spinner">
+            <img src="https://i.gifer.com/ZZ5H.gif" width="50" alt="Loading...">
+        </div>
+    </div>
+
+    <script>
+        const submitBtn = document.getElementById('submitBtn');
+        const fileInput = document.getElementById('fileInput');
+        const progressBar = document.getElementById('progressBar');
+        const bar = document.getElementById('bar');
+        const spinner = document.getElementById('spinner');
+
+        submitBtn.addEventListener('click', async (e) => {
+            e.preventDefault();
+
+            const file = fileInput.files[0];
+            if (!file) {
+                alert("Please select a file first.");
+                return;
+            }
+
+            progressBar.style.display = 'block';
+            spinner.style.display = 'block';
+            bar.style.width = '0%';
+
+            const formData = new FormData();
+            formData.append('file', file);
+
+            let width = 0;
+            const interval = setInterval(() => {
+                if (width >= 90) return;
+                width += 2;
+                bar.style.width = width + '%';
+            }, 100);
+
+            try {
+                const response = await fetch('/', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!response.ok) throw new Error('Network error');
+
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = "shop_results.xlsx";
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                window.URL.revokeObjectURL(url);
+
+                clearInterval(interval);
+                bar.style.width = '100%';
+                setTimeout(() => {
+                    progressBar.style.display = 'none';
+                    spinner.style.display = 'none';
+                }, 500);
+
+            } catch (err) {
+                alert("Something went wrong: " + err. Message);
+                clearInterval(interval);
+                progressBar.style.display = 'none';
+                spinner.style.display = 'none';
+            }
+        });
+    </script>
+</body>
+</html>
