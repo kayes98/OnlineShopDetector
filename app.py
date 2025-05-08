@@ -8,23 +8,21 @@ from io import BytesIO
 import concurrent.futures
 
 UPLOAD_FOLDER = 'uploads'
-ALLOWED_EXTENSIONS = {'xlsx'}
+ALLOWED_EXTENSIONS = {'xlsx', 'csv'}
 
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
-# Keywords
 shop_keywords = [
     'add to cart', 'cart', 'web shop', 'store', 'basket',
-    'warenkorb', 'buy now', 'checkout', 'shop', 'shopping cart'
+    'warenkorb', 'buy now', 'checkout', 'shop', 'shopping cart', 'shop now'
 ]
+
 banned_keywords = ['workshop', 'shoping']
 
-# Check allowed file
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
-# Analyze individual URL
 def analyze_url(url):
     try:
         response = requests.get(url, timeout=15, headers={'User-Agent': 'Mozilla/5.0'})
@@ -51,7 +49,6 @@ def analyze_url(url):
     except Exception as e:
         return (url, f"Error: {str(e)}", "N/A", "N/A")
 
-# Flask route
 @app.route('/', methods=['GET', 'POST'])
 def index():
     if request.method == 'POST':
@@ -62,16 +59,16 @@ def index():
             os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
             file.save(path)
 
-            df = pd.read_excel(path)
+            if filename.endswith('.csv'):
+                df = pd.read_csv(path)
+            else:
+                df = pd.read_excel(path)
 
-            # Use ThreadPoolExecutor for faster processing
             with concurrent.futures.ThreadPoolExecutor(max_workers=50) as executor:
                 results = list(executor.map(analyze_url, df['URL']))
 
-            # Build result DataFrame
             result_df = pd.DataFrame(results, columns=['URL', 'Status', 'Found Keywords', 'Banned Keywords'])
 
-            # Save to Excel in memory
             output = BytesIO()
             with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
                 result_df.to_excel(writer, index=False, sheet_name='Results')
