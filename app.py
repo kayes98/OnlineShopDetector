@@ -23,6 +23,12 @@ shop_keywords = [
     'catalog', 'collections', 'online shop', 'zur kasse',
     'jetzt kaufen', 'zahlung', 'versand', 'bestellen'
 ]
+shop_keywords.extend([
+    'acheter', 'panier', 'commander',  # French
+    'comprar', 'carrito', 'tienda',    # Spanish
+    'winkelwagen', 'bestellen',        # Dutch
+])
+
 
 # Banned words
 banned_keywords = ['workshop', 'shoping']
@@ -77,12 +83,12 @@ def analyze_url(url):
                     return (url, "Online shop detected", f"Class: {pattern.pattern}", "None")
 
         # Step 5: Image alt/src pattern check
-        for img in soup.find_all('img'):
-            alt = img.get('alt', '').lower()
-            src = img.get('src', '').lower()
-            for pattern in image_alt_src_patterns:
-                if pattern.search(alt) or pattern.search(src):
-                    return (url, "Online shop detected", f"Image: {pattern.pattern}", "None")
+        # for img in soup.find_all('img'):
+        #     alt = img.get('alt', '').lower()
+        #     src = img.get('src', '').lower()
+        #     for pattern in image_alt_src_patterns:
+        #         if pattern.search(alt) or pattern.search(src):
+        #             return (url, "Online shop detected", f"Image: {pattern.pattern}", "None")
 
         # Step 6: Product-related structure check
         product_indicators = ['price', 'product-item', 'add-to-cart', 'qty', 'product-grid', 'product-title']
@@ -109,6 +115,14 @@ def analyze_url(url):
             # Heuristic 2: URL path contains shop/store/products/catalog
             if any(x in parsed_href.path for x in ['/shop', '/store', '/products', '/catalog']):
                 return (url, "Online shop detected", f"Link path: {parsed_href.path}", "None")
+
+            # Step 8: ID and aria-label check
+            # for tag in soup.find_all(True):  # All tags
+            #     tag_id = tag.get('id', '').lower()
+            #     aria_label = tag.get('aria-label', '').lower()
+            #     for word in shop_keywords:
+            #         if word in tag_id or word in aria_label:
+            #             return (url, "Online shop detected", f"ID/Aria-label: {word}", "None")
 
         return (url, "No shop found", "None", "None")
 
