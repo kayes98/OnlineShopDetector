@@ -19,12 +19,11 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 # Shop keywords (English + German)
 shop_keywords = [
     'add to cart', 'cart', 'web shop', 'store', 'basket', 'warenkorb',
-    'buy now', 'checkout', 'shop', 'shopping cart', 'shop now',
-    'catalog', 'collections', 'online shop', 'zur kasse',
+    'buy now', 'checkout', 'shop', 'shopping cart', 'shop now','online shop', 'zur kasse',
     'jetzt kaufen', 'zahlung', 'versand', 'bestellen'
 ]
 shop_keywords.extend([
-    'acheter', 'panier', 'commander',  # French
+    'acheter', 'commander',  # French
     'comprar', 'carrito', 'tienda',    # Spanish
     'winkelwagen', 'bestellen',        # Dutch
 ])
@@ -32,20 +31,6 @@ shop_keywords.extend([
 
 # Banned words
 banned_keywords = ['workshop', 'shoping']
-
-# Class and icon pattern keywords
-icon_class_patterns = [
-    re.compile(r'(fa|icon)-(shopping-)?(cart|bag|basket|trolley)', re.I),
-    re.compile(r'cart[-_]?icon', re.I),
-    re.compile(r'basket[-_]?icon', re.I),
-    re.compile(r'shop[-_]?icon', re.I),
-    re.compile(r'warenkorb', re.I),
-]
-
-image_alt_src_patterns = [
-    re.compile(r'(cart|bag|basket|trolley|shop|warenkorb)', re.I)
-]
-
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
@@ -75,27 +60,6 @@ def analyze_url(url):
                 if word in link_text or word in href:
                     return (url, "Online shop detected", word, "None")
 
-        # Step 4: Class pattern check
-        for tag in soup.find_all(class_=True):
-            class_list = " ".join(tag.get("class", []))
-            for pattern in icon_class_patterns:
-                if pattern.search(class_list):
-                    return (url, "Online shop detected", f"Class: {pattern.pattern}", "None")
-
-        # Step 5: Image alt/src pattern check
-        # for img in soup.find_all('img'):
-        #     alt = img.get('alt', '').lower()
-        #     src = img.get('src', '').lower()
-        #     for pattern in image_alt_src_patterns:
-        #         if pattern.search(alt) or pattern.search(src):
-        #             return (url, "Online shop detected", f"Image: {pattern.pattern}", "None")
-
-        # Step 6: Product-related structure check
-        product_indicators = ['price', 'product-item', 'add-to-cart', 'qty', 'product-grid', 'product-title']
-        for div in soup.find_all(['div', 'span', 'section']):
-            class_list = " ".join(div.get('class', [])).lower()
-            if any(indicator in class_list for indicator in product_indicators):
-                return (url, "Online shop detected", f"Product structure: {class_list}", "None")
 
         # Step 7: Subdomain or link to likely shop section
         parsed_url = urlparse(url)
@@ -112,17 +76,10 @@ def analyze_url(url):
             if 'shop.' in parsed_href.netloc and base_domain in parsed_href.netloc:
                 return (url, "Online shop detected", f"Subdomain: {parsed_href.netloc}", "None")
 
-            # Heuristic 2: URL path contains shop/store/products/catalog
-            if any(x in parsed_href.path for x in ['/shop', '/store', '/products', '/catalog']):
+            # Heuristic 2: URL path contains shop/store
+            if any(x in parsed_href.path for x in ['/shop', '/store']):
                 return (url, "Online shop detected", f"Link path: {parsed_href.path}", "None")
 
-            # Step 8: ID and aria-label check
-            # for tag in soup.find_all(True):  # All tags
-            #     tag_id = tag.get('id', '').lower()
-            #     aria_label = tag.get('aria-label', '').lower()
-            #     for word in shop_keywords:
-            #         if word in tag_id or word in aria_label:
-            #             return (url, "Online shop detected", f"ID/Aria-label: {word}", "None")
 
         return (url, "No shop found", "None", "None")
 
